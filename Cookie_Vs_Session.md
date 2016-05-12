@@ -233,36 +233,188 @@ Cookie是保存在浏览器端的，因此**浏览器具有操作Cookie的先决
 
 由于JavaScript能够任意地读写Cookie，有些好事者便想使用JavaScript程序去窥探用户在其他网站的Cookie。不过这是徒劳的，W3C组织早就意识到JavaScript对Cookie的读写所带来的安全隐患并加以防备了，**W3C标准的浏览器会阻止JavaScript读写任何不属于自己网站的Cookie**。换句话说，A网站的JavaScript程序读写B网站的Cookie不会有任何结果。
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+***
 
 ##Session机制
 
-**Session机制是一种服务器端的机制**，服务器使用一种类似于散列表的结构（也可能就是使用散列表）来保存信息。
+###什么是Session
+　Session是另一种记录客户状态的机制，不同的是Cookie保存在客户端浏览器中，而Session保存在服务器上。客户端浏览器访问服务器的时候，服务器把客户端信息以某种形式记录在服务器上。这就是Session。客户端浏览器再次访问时只需要从该Session中查找该客户的状态就可以了。
 
-session机制采用的是一种在服务器端保持状态的解决方案。同时我们也看到，由于采用服务器端保持状态的方案在客户端也需要保存一个标识，所以session机制可能需要借助于cookie机制来达到保存标识的目的。而session提供了方便管理全局变量的方式 。
+>如果说Cookie机制是通过检查客户身上的“通行证”来确定客户身份的话，那么Session机制就是通过检查服务器上的“客户明细表”来确认客户身份（客服端只存了一个Session Id）。Session相当于程序在服务器上建立的一份客户档案，客户来访的时候只需要查询客户档案表就可以了。
+　
+##Session 工作机制
+
+Session技术则是**服务端的解决方案**，它是通过服务器来保持状态的。由于Session这个词汇包含的语义很多，因此需要在这里明确一下Session的含义。
+
+- 首先，我们通常都会把Session翻译成会话，因此我们可以把客户端浏览器与服务器之间一系列交互的动作称为一个Session。从这个语义出发，我们会提到Session持续的时间，会提到在Session过程中进行了什么操作等等；
+
+- 其次，Session指的是服务器端为客户端所开辟的存储空间，在其中保存的信息就是用于保持状态。从这个语义出发，我们则会提到往Session中存放什么内容，如何根据键值从Session中获取匹配的内容等。
+
+要使用Session，第一步当然是创建Session了。
+
+**那么Session在何时创建呢？**
+
+当然还是在服务器端程序运行的过程中创建的，不同语言实现的应用程序有不同创建Session的方法，而在Java中是通过调用`HttpServletRequest`的`getSession`方法（使用`true`作为参数）创建的。
+
+在创建了Session的同时，服务器会为该Session生成唯一的Session  ID，而这个Session  ID在随后的请求中会被用来重新获得已经创建的Session；在Session被创建之后，就可以调用Session相关的方法往Session中增加内容了，而这些内容只会保存在服务器中，发到客户端的只有Session ID；当客户端再次发送请求的时候，会将这个Session ID带上，服务器接受到请求之后就会依据Session ID找到相应的Session，从而再次使用之。正是这样一个过程，用户的状态也就得以保持了。
+
+>提示：Session是服务器端使用的一种记录客户端状态的机制，使用上比Cookie简单一些，相应的也增加了服务器的存储压力。　　
+
+
+###Session 客服端存储位置
+　
+####使用Cookie存储
+
+**Session机制是一种服务器端的机制**，服务器使用一种类似于散列表的结构（也可能就是使用散列表）来保存信息。由于采用服务器端保持状态的方案在客户端也需要保存一个标识，所以session机制**可能**需要借助于cookie机制来达到保存标识的目的（注意用cookie存储是一种简单常见的方式，但不是必须存在于cookie中）。而session提供了方便管理全局变量的方式 。
 
 session是针对每一个用户的，变量的值保存在服务器上，用一个sessionID来区分是哪个用户session变量,这个值是通过用户的浏览器在访问的时候返回给服务器，当客户禁用cookie时，这个值也可能设置为由get来返回给服务器。
 
-就安全性来说：当你访问一个使用session 的站点，同时在自己机子上建立一个cookie，建议在服务器端的session机制更安全些，因为它不会任意读取客户存储的信息。
+>就安全性来说：当你访问一个使用session 的站点，同时在自己机子上建立一个cookie，建议在服务器端的session机制更安全些，因为它不会任意读取客户存储的信息。
 
 
 当程序需要为某个客户端的请求创建一个session时，服务器首先检查这个客户端的请求里是否已包含了一个session标识（称为session id），如果已包含则说明以前已经为此客户端创建过session，服务器就按照session id把这个session检索出来使用（检索不到，会新建一个），如果客户端请求不包含session id，则为此客户端创建一个session并且生成一个与此session相关联的session id，session id的值应该是一个既不会重复，又不容易被找到规律以仿造的字符串，这个session id将被在本次响应中返回给客户端保存。
 
 保存这个session id的方式可以采用cookie，这样在交互过程中浏览器可以自动的按照规则把这个标识发挥给服务器。一般这个cookie的名字都是类似于SEEESIONID。但cookie可以被人为的禁止，则必须有其他机制以便在cookie被禁止时仍然能够把session id传递回服务器。
 
+####附加到URL路径
+
 经常被使用的一种技术叫做URL重写，就是把session id直接附加在URL路径的后面。还有一种技术叫做表单隐藏字段。就是服务器会自动修改表单，添加一个隐藏字段，以便在表单提交时能够把session id传递回服务器。
+
+
+###Session的生命周期
+　　Session保存在服务器端。为了获得更高的存取速度，服务器**一般**把Session放在内存里。每个用户都会有一个独立的Session。如果Session内容过于复杂，当大量客户访问服务器时可能会导致内存溢出。因此，Session里的信息应该尽量精简。
+
+　　Session在用户第一次访问服务器的时候自动创建。需要注意只有访问JSP、Servlet等程序时才会创建Session，只访问HTML、IMAGE等静态资源并不会创建Session。如果尚未生成Session，也可以使用request.getSession(true)强制生成Session。
+
+　　Session生成后，只要用户继续访问，服务器就会更新Session的最后访问时间，并维护该Session。用户每访问服务器一次，无论是否读写Session，服务器都认为该用户的Session“活跃（active）”了一次。
+　
+###Session的有效期
+　　由于会有越来越多的用户访问服务器，因此Session也会越来越多。为防止内存溢出，服务器会把长时间内没有活跃的Session从内存删除。这个时间就是Session的超时时间。如果超过了超时时间没访问过服务器，Session就自动失效了。
+　　
+Session的超时时间为maxInactiveInterval属性，可以通过对应的getMaxInactiveInterval()获取，通过setMaxInactiveInterval(longinterval)修改。
+
+　　Session的超时时间也可以在web.xml中修改。另外，通过调用Session的invalidate()方法可以使Session失效。
+
+###Session的常用方法
+
+Session中包括各种方法，使用起来要比Cookie方便得多。Session的常用方法如下所示。
+
+- void setAttribute(String attribute, Object  value)：设置Session属性。value参数可以为任何Java Object。通常为Java Bean。value信息不宜过大 
+
+- String  getAttribute(String attribute)：返回Session属性 Enumeration getAttributeNames()：返回Session中存在的属性名 
+- void removeAttribute(String  attribute)：移除Session属性 
+- String getId()：返回Session的ID。该ID由服务器自动创建，不会重复 
+- long  getCreationTime()：返回Session的创建日期。返回类型为long，常被转化为Date类型，例如：Date createTime = new  Date(session.get CreationTime()) 
+- long getLastAccessedTime()：返回Session的最后活跃时间。返回类型为long 
+- int  getMaxInactiveInterval()：返回Session的超时时间。单位为秒。超过该时间没有访问，服务器认为该Session失效 
+- void  setMaxInactiveInterval(int second)：设置Session的超时时间。单位为秒 
+- void putValue(String  attribute, Object value)：不推荐的方法。已经被setAttribute(String attribute, Object  Value)替代 
+- Object getValue(String attribute)：不被推荐的方法。已经被getAttribute(String  attr)替代 boolean isNew()：返回该Session是否是新创建的 
+- void  invalidate()：使该Session失效
+　　
+Tomcat中Session的默认超时时间为20分钟。通过setMaxInactiveInterval(int  seconds)修改超时时间。可以修改web.xml改变Session的默认超时时间。例如修改为60分钟：
+
+```
+<session-config>
+   <session-timeout>60</session-timeout>    <!-- 单位：分钟 -->
+</session-config>
+```
+
+>　　注意：<session-timeout>参数的单位为分钟，而setMaxInactiveInterval(int s)单位为秒。
+　　在server.xml中定义context时采用如下定义（单位为秒）：
+
+```
+<Context path="/livsorder" docBase="/home/httpd/html/livsorder" defaultSessionTimeOut="3600" isWARExpanded="true"
+    isWARValidated="false" isInvokerEnabled="true"
+    isWorkDirPersistent="false"/>
+ ```   
+    
+###Session对浏览器的要求
+
+　　虽然Session保存在服务器，对客户端是透明的，它的正常运行仍然需要客户端浏览器的支持。这是因为Session需要使用Cookie作为识别标志。HTTP协议是无状态的，Session不能依据HTTP连接来判断是否为同一客户，因此服务器向客户端浏览器发送一个名为JSESSIONID的Cookie，它的值为该Session的id（也就是HttpSession.getId()的返回值）。Session依据该Cookie来识别是否为同一用户。
+　　该Cookie为服务器自动生成的，它的maxAge属性一般为–1，表示仅当前浏览器内有效，并且各浏览器窗口间不共享，关闭浏览器就会失效。
+　　因此同一机器的两个浏览器窗口访问服务器时，会生成两个不同的Session。但是由浏览器窗口内的链接、脚本等打开的新窗口（也就是说不是双击桌面浏览器图标等打开的窗口）除外。这类子窗口会共享父窗口的Cookie，因此会共享一个Session。
+
+>注意：新开的浏览器窗口会生成新的Session，但子窗口除外。子窗口会共用父窗口的Session。例如，在链接上右击，在弹出的快捷菜单中选择“在新窗口中打开”时，子窗口便可以访问父窗口的Session。
+
+>**如果客户端浏览器将Cookie功能禁用，或者不支持Cookie怎么办？**例如，绝大多数的手机浏览器都不支持Cookie。Java  Web提供了另一种解决方案：URL地址重写。
+
+###解决Cookie 禁用下的Session存储问题
+
+####URL地址重写
+　　URL地址重写是对客户端不支持Cookie的解决方案。URL地址重写的原理是将该用户Session的id信息重写到URL地址中。服务器能够解析重写后的URL获取Session的id。这样即使客户端不支持Cookie，也可以使用Session来记录用户状态。HttpServletResponse类提供了encodeURL(Stringurl)实现URL地址重写，例如：
+```
+<td>
+    <a href="<%=response.encodeURL("index.jsp?c=1&wd=Java") %>"> 
+    Homepage</a>
+</td>
+```
+　　该方法会自动判断客户端是否支持Cookie。如果客户端支持Cookie，会将URL原封不动地输出来。如果客户端不支持Cookie，则会将用户Session的id重写到URL中。重写后的输出可能是这样的：
+```
+<td>
+    <a href="index.jsp;jsessionid=0CCD096E7F8D97B0BE608AFDC3E1931E?c=1&wd=Java">Homepage</a>
+</td>
+```
+　　即在文件名的后面，在URL参数的前面添加了字符串“;jsessionid=XXX”。其中XXX为Session的id。分析一下可以知道，增添的jsessionid字符串既不会影响请求的文件名，也不会影响提交的地址栏参数。用户单击这个链接的时候会把Session的id通过URL提交到服务器上，服务器通过解析URL地址获得Session的id。
+　　如果是页面重定向（Redirection），URL地址重写可以这样写：
+```
+<%
+    if(“administrator”.equals(userName)) {
+        response.sendRedirect(response.encodeRedirectURL(“administrator.jsp”));
+        return;
+    }
+%>
+```
+　　效果跟response.encodeURL(String  url)是一样的：如果客户端支持Cookie，生成原URL地址，如果不支持Cookie，传回重写后的带有jsessionid字符串的地址。
+　　
+>对于WAP程序，由于大部分的手机浏览器都不支持Cookie，WAP程序都会采用URL地址重写来跟踪用户会话。
+　　
+>注意：TOMCAT判断客户端浏览器是否支持Cookie的依据是请求中是否含有Cookie。尽管客户端可能会支持Cookie，但是由于第一次请求时不会携带任何Cookie（因为并无任何Cookie可以携带），URL地址重写后的地址中仍然会带有jsessionid。当第二次访问时服务器已经在浏览器中写入Cookie了，因此URL地址重写后的地址中就不会带有jsessionid了。
+　
+　由于Cookie可以被人为的禁止，必须有其他机制以便在Cookie被禁止时仍然能够把session  id传递回服务器。经常被使用的一种技术叫做URL重写，就是把session id直接附加在URL路径的后面，附加方式也有两种： 
+ - 一种是作为**URL路径的附加信息**，表现形式为`http://...../xxx;jsessionid=  ByOK3vjFD75aPnrF7C2HmdnV6QZcEbzWoWiBYEnLerjQ99zWpBng!-145788764 `
+ - 一种是作为**查询字符串**附加在URL后面，表现形式为`http://...../xxx?jsessionid=ByOK3vjFD75aPnrF7C2HmdnV6QZcEbzWoWiBYEnLerjQ99zWpBng!-145788764`
+　　
+这两种方式对于用户来说是没有区别的，只是服务器在解析的时候处理的方式不同，采用第一种方式也有利于把session  id的信息和正常程序参数区分开来。为了在整个交互过程中始终保持状态，就必须在每个客户端可能请求的路径后面都包含这个session id。
+　
+####因此字段（Hide Field）
+
+　另一种技术叫做表单隐藏字段。就是服务器会自动修改表单，添加一个隐藏字段，以便在表单提交时能够把session  id传递回服务器。比如下面的表单：
+<form name="testform" action="/xxx">
+    <input type="text">
+</form>
+　　在被传递给客户端之前将被改写成：
+<form name="testform" action="/xxx">
+    <input type="hidden" name="jsessionid" value="ByOK3vjFD75aPnrF7C2HmdnV6QZcEbzWoWiBYEnLerjQ99zWpBng!-145788764">
+    <input type="text">
+</form>
+　　
+这种技术现在已较少应用。
+　　
+在谈论session机制的时候，常常听到这样一种误解“**只要关闭浏览器，session就消失了**”。其实可以想象一下会员卡的例子，除非顾客主动对店家提出销卡，否则店家绝对不会轻易删除顾客的资料。对session来说也是一样的，除非程序通知服务器删除一个session，否则服务器会一直保留，程序一般都是在用户做log  off的时候发个指令去删除session。然而浏览器从来不会主动在关闭之前通知服务器它将要关闭，因此**服务器根本不会有机会知道浏览器已经关闭**，之所以会有这种错觉，是**大部分session机制都使用会话cookie来保存session  id，而关闭浏览器后这个 session  id就消失了，再次连接服务器时也就无法找到原来的session。如果服务器设置的cookie被保存到硬盘上，或者使用某种手段改写浏览器发出的HTTP请求头，把原来的session  id发送给服务器，则再次打开浏览器仍然能够找到原来的session**。
+
+　　恰恰是**由于关闭浏览器不会导致session被删除，迫使服务器为seesion设置了一个失效时间，当距离客户端上一次使用session的时间超过这个失效时间时，服务器就可以认为客户端已经停止了活动，才会把session删除以节省存储空间**。
+
+##Session禁止使用Cookie
+
+　　既然WAP上大部分的客户浏览器都不支持Cookie，索性禁止Session使用Cookie，统一使用URL地址重写会更好一些。Java  Web规范支持通过配置的方式禁用Cookie。下面举例说一下怎样通过配置禁止使用Cookie。
+　　打开项目sessionWeb的WebRoot目录下的META-INF文件夹（跟WEB-INF文件夹同级，如果没有则创建），打开context.xml（如果没有则创建），编辑内容如下：/META-INF/context.xml：
+```
+<?xml version='1.0' encoding='UTF-8'?>
+    <Context path="/sessionWeb"cookies="false">
+</Context>
+```
+　　或者修改Tomcat全局的conf/context.xml，修改内容如下： context.xml：
+```
+<!-- The contents of this file will be loaded for eachweb application -->
+<Context cookies="false">
+    <!-- ... 中间代码略 -->
+</Context>
+```
+　　部署后TOMCAT便不会自动生成名JSESSIONID的Cookie，Session也不会以Cookie为识别标志，而仅仅以重写后的URL地址为识别标志了
+
+>注意：该配置只是禁止Session使用Cookie作为识别标志，并不能阻止其他的Cookie读写。也就是说服务器不会自动维护名为JSESSIONID的Cookie了，但是程序中仍然可以读写其他的Cookie。
+
 
   * * * *
 
@@ -270,31 +422,33 @@ session是针对每一个用户的，变量的值保存在服务器上，用一�
   
 Cookie与Session都能够进行会话跟踪，但是完成的原理不太一样。普通状况下二者均能够满足需求，但有时分不能够运用Cookie，有时分不能够运用Session。下面经过比拟阐明二者的特性以及适用的场所。
 
- 1、存取方式的不同
+ 1. **存取方式的不同**
 
 Cookie中只能保管ASCII字符串，假如需求存取Unicode字符或者二进制数据，需求先进行编码。Cookie中也不能直接存取Java对象。若要存储略微复杂的信息，运用Cookie是比拟艰难的。
 
 而Session中能够存取任何类型的数据，包括而不限于String、Integer、List、Map等。Session中也能够直接保管Java Bean乃至任何Java类，对象等，运用起来十分便当。能够把Session看做是一个Java容器类。
 
-2、隐私策略的不同
+>单个cookie在客户端的限制是3K，就是说一个站点在客户端存放的COOKIE不能超过3K；
+
+2. **隐私策略的不同**
 
 Cookie存储在客户端阅读器中，对客户端是可见的，客户端的一些程序可能会窥探、复制以至修正Cookie中的内容。而Session存储在服务器上，对客户端是透明的，不存在敏感信息泄露的风险。
 
 假如选用Cookie，比较好的方法是，敏感的信息如账号密码等尽量不要写到Cookie中。最好是像Google、Baidu那样将Cookie信息加密，提交到服务器后再进行解密，保证Cookie中的信息只要本人能读得懂。而假如选择Session就省事多了，反正是放在服务器上，Session里任何隐私都能够有效的保护。
 
- 3、有效期上的不同
+ 3. **有效期上的不同**
 
 使用过Google的人都晓得，假如登录过Google，则Google的登录信息长期有效。用户不用每次访问都重新登录，Google会持久地记载该用户的登录信息。要到达这种效果，运用Cookie会是比较好的选择。只需要设置Cookie的过期时间属性为一个很大很大的数字。
 
 由于Session依赖于名为JSESSIONID的Cookie，而Cookie JSESSIONID的过期时间默许为–1，只需关闭了阅读器该Session就会失效，因而Session不能完成信息永世有效的效果。运用URL地址重写也不能完成。而且假如设置Session的超时时间过长，服务器累计的Session就会越多，越容易招致内存溢出。
 
- 4、服务器压力的不同
+ 4. **服务器压力的不同**
 
 Session是保管在服务器端的，每个用户都会产生一个Session。假如并发访问的用户十分多，会产生十分多的Session，耗费大量的内存。因而像Google、Baidu、Sina这样并发访问量极高的网站，是不太可能运用Session来追踪客户会话的。
 
 而Cookie保管在客户端，不占用服务器资源。假如并发阅读的用户十分多，Cookie是很好的选择。关于Google、Baidu、Sina来说，Cookie或许是唯一的选择。
 
- 5、浏览器支持的不同
+ 5. **浏览器支持的不同**
 
 Cookie是需要客户端浏览器支持的。假如客户端禁用了Cookie，或者不支持Cookie，则会话跟踪会失效。关于WAP上的应用，常规的Cookie就派不上用场了。
 
@@ -302,7 +456,7 @@ Cookie是需要客户端浏览器支持的。假如客户端禁用了Cookie，�
 
 假如客户端支持Cookie，则Cookie既能够设为本浏览器窗口以及子窗口内有效（把过期时间设为–1），也能够设为一切阅读器窗口内有效（把过期时间设为某个大于0的整数）。但Session只能在本阅读器窗口以及其子窗口内有效。假如两个浏览器窗口互不相干，它们将运用两个不同的Session。（IE8下不同窗口Session相干）
 
-6、跨域支持上的不同
+6. **跨域支持上的不同**
 
 Cookie支持跨域名访问，例如将domain属性设置为“.biaodianfu.com”，则以“.biaodianfu.com”为后缀的一切域名均能够访问该Cookie。跨域名Cookie如今被普遍用在网络中，例如Google、Baidu、Sina等。而Session则不会支持跨域名访问。Session仅在他所在的域名内有效。
 
