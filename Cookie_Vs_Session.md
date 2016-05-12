@@ -295,6 +295,12 @@ Session的超时时间为maxInactiveInterval属性，可以通过对应的getMax
 
 　　Session的超时时间也可以在web.xml中修改。另外，通过调用Session的invalidate()方法可以使Session失效。
 
+####Session 何时关闭？
+　
+在谈论session机制的时候，常常听到这样一种误解“**只要关闭浏览器，session就消失了**”。其实可以想象一下会员卡的例子，除非顾客主动对店家提出销卡，否则店家绝对不会轻易删除顾客的资料。对session来说也是一样的，除非程序通知服务器删除一个session，否则服务器会一直保留，程序一般都是在用户做log  off的时候发个指令去删除session。然而浏览器从来不会主动在关闭之前通知服务器它将要关闭，因此**服务器根本不会有机会知道浏览器已经关闭**，之所以会有这种错觉，是**大部分session机制都使用会话cookie来保存session  id，而关闭浏览器后这个 session  id就消失了，再次连接服务器时也就无法找到原来的session。如果服务器设置的cookie被保存到硬盘上，或者使用某种手段改写浏览器发出的HTTP请求头，把原来的session  id发送给服务器，则再次打开浏览器仍然能够找到原来的session**。
+
+　　恰恰是**由于关闭浏览器不会导致session被删除，迫使服务器为seesion设置了一个失效时间，当距离客户端上一次使用session的时间超过这个失效时间时，服务器就可以认为客户端已经停止了活动，才会把session删除以节省存储空间**。
+
 ###Session的常用方法
 
 Session中包括各种方法，使用起来要比Cookie方便得多。Session的常用方法如下所示。
@@ -370,14 +376,15 @@ Tomcat中Session的默认超时时间为20分钟。通过setMaxInactiveInterval(
 >对于WAP程序，由于大部分的手机浏览器都不支持Cookie，WAP程序都会采用URL地址重写来跟踪用户会话。
 　　
 >注意：TOMCAT判断客户端浏览器是否支持Cookie的依据是请求中是否含有Cookie。尽管客户端可能会支持Cookie，但是由于第一次请求时不会携带任何Cookie（因为并无任何Cookie可以携带），URL地址重写后的地址中仍然会带有jsessionid。当第二次访问时服务器已经在浏览器中写入Cookie了，因此URL地址重写后的地址中就不会带有jsessionid了。
-　
+
+
 　由于Cookie可以被人为的禁止，必须有其他机制以便在Cookie被禁止时仍然能够把session  id传递回服务器。经常被使用的一种技术叫做URL重写，就是把session id直接附加在URL路径的后面，附加方式也有两种： 
  - 一种是作为**URL路径的附加信息**，表现形式为`http://...../xxx;jsessionid=  ByOK3vjFD75aPnrF7C2HmdnV6QZcEbzWoWiBYEnLerjQ99zWpBng!-145788764 `
  - 一种是作为**查询字符串**附加在URL后面，表现形式为`http://...../xxx?jsessionid=ByOK3vjFD75aPnrF7C2HmdnV6QZcEbzWoWiBYEnLerjQ99zWpBng!-145788764`
 　　
 这两种方式对于用户来说是没有区别的，只是服务器在解析的时候处理的方式不同，采用第一种方式也有利于把session  id的信息和正常程序参数区分开来。为了在整个交互过程中始终保持状态，就必须在每个客户端可能请求的路径后面都包含这个session id。
 　
-####因此字段（Hide Field）
+####隐藏字段（Hide Field）
 
 　另一种技术叫做表单隐藏字段。就是服务器会自动修改表单，添加一个隐藏字段，以便在表单提交时能够把session  id传递回服务器。比如下面的表单：
 <form name="testform" action="/xxx">
@@ -390,10 +397,8 @@ Tomcat中Session的默认超时时间为20分钟。通过setMaxInactiveInterval(
 </form>
 　　
 这种技术现在已较少应用。
-　　
-在谈论session机制的时候，常常听到这样一种误解“**只要关闭浏览器，session就消失了**”。其实可以想象一下会员卡的例子，除非顾客主动对店家提出销卡，否则店家绝对不会轻易删除顾客的资料。对session来说也是一样的，除非程序通知服务器删除一个session，否则服务器会一直保留，程序一般都是在用户做log  off的时候发个指令去删除session。然而浏览器从来不会主动在关闭之前通知服务器它将要关闭，因此**服务器根本不会有机会知道浏览器已经关闭**，之所以会有这种错觉，是**大部分session机制都使用会话cookie来保存session  id，而关闭浏览器后这个 session  id就消失了，再次连接服务器时也就无法找到原来的session。如果服务器设置的cookie被保存到硬盘上，或者使用某种手段改写浏览器发出的HTTP请求头，把原来的session  id发送给服务器，则再次打开浏览器仍然能够找到原来的session**。
 
-　　恰恰是**由于关闭浏览器不会导致session被删除，迫使服务器为seesion设置了一个失效时间，当距离客户端上一次使用session的时间超过这个失效时间时，服务器就可以认为客户端已经停止了活动，才会把session删除以节省存储空间**。
+
 
 ##Session禁止使用Cookie
 
