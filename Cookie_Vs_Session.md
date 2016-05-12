@@ -466,3 +466,152 @@ Cookie是需要客户端浏览器支持的。假如客户端禁用了Cookie，�
 Cookie支持跨域名访问，例如将domain属性设置为“.biaodianfu.com”，则以“.biaodianfu.com”为后缀的一切域名均能够访问该Cookie。跨域名Cookie如今被普遍用在网络中，例如Google、Baidu、Sina等。而Session则不会支持跨域名访问。Session仅在他所在的域名内有效。
 
 仅运用Cookie或者仅运用Session可能完成不了理想的效果。这时应该尝试一下同时运用Cookie与Session。Cookie与Session的搭配运用在实践项目中会完成很多意想不到的效果。
+
+
+
+
+##附 C# 中的Cookie操作
+
+#### 创建cookie
+
+    有许多的方法创建cookie，我将概述 其中一些比较常用的：
+
+ 
+
+##### 方式一：通过使用HttpCookies类
+
+        //第一种方式
+
+        HttpCookie TestCookies = new HttpCookie("TestCookies");
+
+        TestCookies.Value = http://www.cnblogs.com/aehoo/archive/2012/07/09/TextBox1.Text;
+
+        TestCookies.Expires = DateTime.Now.AddHours(1);
+
+        Response.Cookies.Add(TestCookies);
+
+##### 方式二：使用Response  
+
+//第二种方式
+
+        Response.Cookies["TestCookies"].Value = http://www.cnblogs.com/aehoo/archive/2012/07/09/TextBox1.Text;
+
+        Response.Cookies["TestCookies"].Expires = DateTime.Now.AddDays(1);
+
+##### 方式三：把多个值写入一个cookies
+
+//把多个值写入一个cookies中
+
+        Response.Cookies["TestCookies"]["AboutMe"] = TextBox1.Text;
+
+        Response.Cookies["TestCookies"]["SurName"] = "Wen";
+
+        Response.Cookies["TestCookies"]["FirstName"] = "Jianfeng";
+
+        Response.Cookies["TestCookies"]["Sex"] = "Boy";
+
+        Response.Cookies["TestCookies"]["Work"] = "Programmer";
+
+        Response.Cookies["TestCookies"].Expires = DateTime.Now.AddDays(1);
+
+#### 读取cookie
+
+    在上述代码中，我已经使用了3种方法来创建cookie，所以，这里有必要获取下：
+
+对于方法一：
+
+　　　　 string test = Request.Cookies["TestCookies"].Value;
+
+ 
+
+对于方法二：
+
+　　　　 string test = Request.Cookies["TestCookies"].Value;
+
+ 
+
+对于方法三：
+
+　　　　 //取出多个值在同一个cookies的方法
+
+　　　　 string test;
+
+　　　　 test = Request.Cookies["TestCookies"]["AboutMe"];
+ 
+　　　　 test= test + "，姓名:" + Request.Cookies["TestCookies"]["SurName"];
+
+　　　　 test = test + " " + Request.Cookies["TestCookies"]["FirstName"];
+
+　　　　 test = test + ",性别：" + Request.Cookies["TestCookies"]["Sex"];
+
+　　　　 test = test + ",职业：" + Request.Cookies["TestCookies"]["Work"];  
+
+　　　　 Label1.Text = test;
+
+ 
+
+#### 删除cookie
+
+    在上述代码中，我已经用了三种方法来创建和读取cookies。现在看看下面的代码将如何删除cookies。
+
+if (Request.Cookies["TestCookies"] != null)
+        {
+            Response.Cookies["TestCookies"].Expires = DateTime.Now.AddDays(-1);
+
+            //刷新页面
+            Response.Redirect("TestPage.aspx");
+        }
+
+ 
+
+### 了解HttpCookies类，它包含了所有的cookie值的集合
+
+    我们不需要使用任何额外的命名空间，只需要引用HttpCookies类，因为这个类派生自System.Web命名空间（见第一种方法）。
+
+ 
+
+    HttpCookie类有一些常用的属性：
+
+- 
+    - Domain ：获取或设置将此 Cookie 与其关联的域。
+    - Expires ：获取或设置此 Cookie 的过期日期和时间。 
+    - HasKeys：获取一个值，通过该值指示 Cookie 是否具有子键。 
+    - Name ：获取或设置 Cookie 的名称。 
+    - Path ：获取或设置要与当前 Cookie 一起传输的虚拟路径。 
+    - Secure ：获取或设置一个值，该值指示是否使用安全套接字层 (SSL)（即仅通过 HTTPS）传输 Cookie。 
+    - Value ：获取或设置单个 Cookie 值。 
+    - Values ：获取单个 Cookie 对象所包含的键值对的集合。 
+
+ 
+
+### Cookie的限制
+
+    使用cookies有以下限制：
+
+1.Cookies最大为4096字节；
+
+2.只能存储20个cookie，可以使用在一个单一的网站上，如果超过20个，浏览器就会丢弃旧的cookies（[IE将每个域增至50个](http://support.microsoft.com/kb/941495)）；  
+
+3.用户可以改变浏览器的设置，以使用或禁用cookies，所以建议检查用户的状态，并提示用户启用cookies。
+
+ 
+
+    有时,用户在浏览器禁用了cookie,而且浏览器上也没有相关的提示信息来提醒启用cookies。在这种情况下，你需要检查用户的浏览器，在网站首页，并显示相应的提示，或重定向到有这样提示消息的页面来提醒用户。下面的代码将检查用户的浏览器是否支持cookies。
+
+protectedvoidPage_Load(object sender, EventArgs e)
+    {
+        if (Request.Browser.Cookies)
+        {
+            //浏览器支持cookies,继续coding......
+        }
+        else
+        {
+            //浏览器不支持cookies，那么弹出提示信息或者重定向到新页面进行处理
+        }
+    }
+
+ 
+
+ 
+
+    我建议不要把敏感信息存储在cookies里，如果有需要的话，就加密下信息吧。
