@@ -479,7 +479,7 @@ Cookie支持跨域名访问，例如将domain属性设置为“.biaodianfu.com�
  
 
 ##### 方式一：通过使用HttpCookies类
-
+```
         //第一种方式
 
         HttpCookie TestCookies = new HttpCookie("TestCookies");
@@ -489,17 +489,17 @@ Cookie支持跨域名访问，例如将domain属性设置为“.biaodianfu.com�
         TestCookies.Expires = DateTime.Now.AddHours(1);
 
         Response.Cookies.Add(TestCookies);
-
+```
 ##### 方式二：使用Response  
-
+```
 //第二种方式
 
         Response.Cookies["TestCookies"].Value = http://www.cnblogs.com/aehoo/archive/2012/07/09/TextBox1.Text;
 
         Response.Cookies["TestCookies"].Expires = DateTime.Now.AddDays(1);
-
+```
 ##### 方式三：把多个值写入一个cookies
-
+```
 //把多个值写入一个cookies中
 
         Response.Cookies["TestCookies"]["AboutMe"] = TextBox1.Text;
@@ -513,25 +513,25 @@ Cookie支持跨域名访问，例如将domain属性设置为“.biaodianfu.com�
         Response.Cookies["TestCookies"]["Work"] = "Programmer";
 
         Response.Cookies["TestCookies"].Expires = DateTime.Now.AddDays(1);
-
+```
 #### 读取cookie
 
     在上述代码中，我已经使用了3种方法来创建cookie，所以，这里有必要获取下：
 
 对于方法一：
-
+```
 　　　　 string test = Request.Cookies["TestCookies"].Value;
-
+```
  
 
 对于方法二：
-
+```
 　　　　 string test = Request.Cookies["TestCookies"].Value;
-
+```
  
 
 对于方法三：
-
+```
 　　　　 //取出多个值在同一个cookies的方法
 
 　　　　 string test;
@@ -547,13 +547,13 @@ Cookie支持跨域名访问，例如将domain属性设置为“.biaodianfu.com�
 　　　　 test = test + ",职业：" + Request.Cookies["TestCookies"]["Work"];  
 
 　　　　 Label1.Text = test;
-
+```
  
 
 #### 删除cookie
 
     在上述代码中，我已经用了三种方法来创建和读取cookies。现在看看下面的代码将如何删除cookies。
-
+```
 if (Request.Cookies["TestCookies"] != null)
         {
             Response.Cookies["TestCookies"].Expires = DateTime.Now.AddDays(-1);
@@ -561,7 +561,7 @@ if (Request.Cookies["TestCookies"] != null)
             //刷新页面
             Response.Redirect("TestPage.aspx");
         }
-
+```
  
 
 ### 了解HttpCookies类，它包含了所有的cookie值的集合
@@ -571,8 +571,7 @@ if (Request.Cookies["TestCookies"] != null)
  
 
     HttpCookie类有一些常用的属性：
-
-- 
+ 
     - Domain ：获取或设置将此 Cookie 与其关联的域。
     - Expires ：获取或设置此 Cookie 的过期日期和时间。 
     - HasKeys：获取一个值，通过该值指示 Cookie 是否具有子键。 
@@ -597,7 +596,7 @@ if (Request.Cookies["TestCookies"] != null)
  
 
     有时,用户在浏览器禁用了cookie,而且浏览器上也没有相关的提示信息来提醒启用cookies。在这种情况下，你需要检查用户的浏览器，在网站首页，并显示相应的提示，或重定向到有这样提示消息的页面来提醒用户。下面的代码将检查用户的浏览器是否支持cookies。
-
+```
 protectedvoidPage_Load(object sender, EventArgs e)
     {
         if (Request.Browser.Cookies)
@@ -609,7 +608,7 @@ protectedvoidPage_Load(object sender, EventArgs e)
             //浏览器不支持cookies，那么弹出提示信息或者重定向到新页面进行处理
         }
     }
-
+```
  
 
  
