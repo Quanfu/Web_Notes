@@ -146,8 +146,9 @@ Cookie在客户端是由浏览器来管理的。浏览器能够保证Google只�
  cookie.setDomain(".helloweenvsfei.com"); // 设置域名 
  cookie.setPath("/"); // 设置路径 
  cookie.setMaxAge(Integer.MAX_VALUE); // 设置有效期 
- response.addCookie(cookie); // 输出到客户端读者可以修改本机下的hosts文件来配置多个临时域名，然后使用setCookie.jsp程序来设置跨域名Cookie验证domain属性。
+ response.addCookie(cookie); // 输出到客户端
 ```
+ 读者可以修改本机下的hosts文件来配置多个临时域名，然后使用setCookie.jsp程序来设置跨域名Cookie验证domain属性。
  
 >注意：domain参数必须以点(".")开始。另外，name相同但domain不同的两个Cookie是两个不同的Cookie。如果想要两个域名完全不同的网站共有Cookie，可以生成两个Cookie，domain属性分别为两个域名，输出到客户端。
 
@@ -159,14 +160,17 @@ domain属性决定运行访问Cookie的域名，而path属性决定允许访问C
 
 ```
 Cookie cookie = new Cookie("time","20080808"); // 新建Cookie 
-cookie.setPath("/session/"); // 设置路径 
+cookie.setPath("/sessionWeb/"); // 设置路径 
 response.addCookie(cookie); // 输出到客户端
-设置为“/”时允许所有路径使用Cookie。path属性需要使用符号“/”结尾。name相同但domain不同的两个Cookie也是两个不同的Cookie。
+
 ```
 
->注意：页面只能获取它属于的Path的Cookie。例如/session/test/a.jsp不能获取到路径为/session/abc/的Cookie。使用时一定要注意。
+设置为“/”时允许所有路径使用Cookie。**path属性需要使用符号“/”结尾**。name相同但domain不同的两个Cookie也是两个不同的Cookie。
 
-domain表示的是cookie所在的域，默认为请求的地址，如网址为www.test.com/test/test.aspx，那么domain默认为www.test.com。而跨域访问，如域A为t1.test.com，域B为t2.test.com，那么在域A生产一个令域A和域B都能访问的cookie就要将该cookie的domain设置为.test.com；如果要在域A生产一个令域A不能访问而域B能访问的cookie就要将该cookie的domain设置为t2.test.com。
+
+>注意：页面只能获取它属于的Path的Cookie。例如/session/test/a.jsp不能获取到路径为`/session/abc/`的Cookie。使用时一定要注意。
+
+domain表示的是cookie所在的域，默认为请求的地址，如网址为`www.test.com/test/test.aspx`，那么domain默认为`www.test.com`。而跨域访问，如域A为`t1.test.com`，域B为`t2.test.com`，那么在域A生产一个令域A和域B都能访问的cookie就要将该cookie的domain设置为`.test.com`；如果要在域A生产一个令域A不能访问而域B能访问的cookie就要将该cookie的domain设置为`t2.test.com`。
 
 path表示cookie所在的目录，默认为/，就是根目录。在同一个服务器上有目录如下：`/test/`,`/test/cd/`,`/test/dd/`，现设一个cookie1的path为`/test/`，cookie2的path为`/test/cd/`，那么test下的所有页面都可以访问到cookie1，而`/test/`和`/test/dd/`的子页面不能访问cookie2。这是因为cookie能让其path路径下的页面访问。
 
@@ -261,6 +265,8 @@ session是针对每一个用户的，变量的值保存在服务器上，用一�
 经常被使用的一种技术叫做URL重写，就是把session id直接附加在URL路径的后面。还有一种技术叫做表单隐藏字段。就是服务器会自动修改表单，添加一个隐藏字段，以便在表单提交时能够把session id传递回服务器。
 
   * * * *
+
+##Cookie Vs. Session
   
 Cookie与Session都能够进行会话跟踪，但是完成的原理不太一样。普通状况下二者均能够满足需求，但有时分不能够运用Cookie，有时分不能够运用Session。下面经过比拟阐明二者的特性以及适用的场所。
 
