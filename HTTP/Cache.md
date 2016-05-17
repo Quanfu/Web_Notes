@@ -463,7 +463,7 @@ Jeff Goldberg内容丰富的演说告诉你为什么不应该过度依赖访问�
 ##Cache-Control Detail
 Any valid HTTP headers can be put in these files. This provides another way to apply the Expires header, and it's a way to add the `Cache-Control` headers. The relevant `Cache-Control` headers are:
 
-`Cache-Control` : `max-age = [delta-seconds]`
+`Cache-Control` : `max-age = [delta-seconds]`  
 Modifies the expiration mechanism, overriding the Expires header. Max-age implies Cache-Control : public.
 >`Cache-control: max-age=5` //表示当访问此网页后的5秒内再次访问不会去服务器 
 
