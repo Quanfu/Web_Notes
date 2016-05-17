@@ -478,28 +478,20 @@ http://www.zdnet.com.cn/developer/tech/story/0,2000081602,39110239-2,00.htm
 
   
 
-- [RFC  
-2616](http://www.w3.org/Protocols/rfc2616/rfc2616.html):  
+- [RFC  2616](http://www.w3.org/Protocols/rfc2616/rfc2616.html):  
   
 
-    - [section  
-13](http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html#sec13) (Caching)  
+    - [section  13](http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html#sec13) (Caching)  
 
-    - [section  
-14.9](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9) (Cache-Control header)  
+    - [section  14.9](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9) (Cache-Control header)  
 
-    - [section  
-14.21](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.21) (Expires header)  
+    - [section  14.21](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.21) (Expires header)  
 
-    - [section  
-14.32](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.32) (Pragma: no-cache) is important if you are interacting with  
-HTTP/1.0 caches  
+    - [section  14.32](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.32) (Pragma: no-cache) is important if you are interacting with  HTTP/1.0 caches  
 
-    - [section  
-14.29](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.29) (Last-Modified) is the most common validation method  
+    - [section  14.29](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.29) (Last-Modified) is the most common validation method  
 
-    - [section  
-3.11](http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.11) (Entity Tags) covers the extra validation method  
+    - [section  3.11](http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.11) (Entity Tags) covers the extra validation method  
 
   
   
