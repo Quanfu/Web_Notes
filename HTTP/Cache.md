@@ -413,20 +413,13 @@ Response.Cache.SetCacheability ( HttpCacheability.Public ) ;
 
 HTTP 1.1的规范有大量的扩展用于页面缓存，以及权威的接口实现指南，参考章节：13, 14.9, 14.21, 以及 14.25.  
   
-- [RFC  2616](http://www.w3.org/Protocols/rfc2616/rfc2616.html):  
-  
-
-    - [section  13](http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html#sec13) (Caching)  
-
-    - [section  14.9](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9) (Cache-Control header)  
-
-    - [section  14.21](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.21) (Expires header)  
-
-    - [section  14.32](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.32) (Pragma: no-cache) is important if you are interacting with  HTTP/1.0 caches  
-
-    - [section  14.29](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.29) (Last-Modified) is the most common validation method  
-
-    - [section  3.11](http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.11) (Entity Tags) covers the extra validation method  
+- [RFC  2616](http://www.w3.org/Protocols/rfc2616/rfc2616.html):   
+    - [section13](http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html#sec13) (Caching)  
+    - [section14.9](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9) (Cache-Control header)  
+    - [section14.21](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.21) (Expires header)  
+    - [section14.32](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.32) (Pragma: no-cache) is important if you are interacting with  HTTP/1.0 caches  
+    - [section14.29](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.29) (Last-Modified) is the most common validation method  
+    - [section3.11](http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.11) (Entity Tags) covers the extra validation method  
 
 ##### [Web-Caching.com](http://www.web-caching.com/)
 
@@ -464,3 +457,51 @@ Jeff Goldberg内容丰富的演说告诉你为什么不应该过度依赖访问�
 作者：[车东](http://www.chedong.com/) 发表于：2007-09-06 00:09 最后更新于：2007-11-07 15:11  
 [版权声明](http://creativecommons.org/licenses/by/3.0/deed.zh)：可以任意转载，转载时请务必以超链接形式标明文章[原始出处](http://www.chedong.com/tech/cache_docs.html)和作者信息及[本声明](http://www.chedong.com/blog/archives/001249.html)。  
 [http://www.chedong.com/tech/cache_docs.html](http://www.chedong.com/tech/cache_docs.html)
+
+***
+
+##Cache-Control Detail
+Any valid HTTP headers can be put in these files. This provides another way to apply the Expires header, and it's a way to add the `Cache-Control` headers. The relevant `Cache-Control` headers are:
+
+`Cache-Control` : `max-age = [delta-seconds]`
+Modifies the expiration mechanism, overriding the Expires header. Max-age implies Cache-Control : public.
+>`Cache-control: max-age=5` //表示当访问此网页后的5秒内再次访问不会去服务器 
+
+`Cache-Control` : `public`  
+Indicates that the object may be stored in a cache. This is the default.
+
+`Cache-Control` : `private`   
+`Cache-Control` : `private = [field-name]`   
+Indicates that the object (or specified field) must not be stored in a shared cache and is intended for a single user. It may be stored in a private cache.
+
+`Cache-Control : no-cache`  
+`Cache-Control : no-cache = [field-name]`   
+Indicates that the object (or specified field) may be cached, but may not be served to a client unless revalidated with the origin server.
+>`Cache-Control: no-cache`：这个很容易让人产生误解，使人误以为是响应不被缓存。实际上`Cache-Control: no-cache`是会被缓存的，只不过每次在向客户端（浏览器）提供响应数据时，缓存都要向服务器评估缓存响应的有效性。
+
+`Cache-Control : no-store`   
+Indicates that the item must not be stored in nonvolatile storage, and should be removed as soon as possible from volatile storage.
+>`Cache-Control: no-store`：这个才是响应不被缓存的意思。
+
+`Cache-Control : no-transform`   
+Proxies may convert data from one storage system to another. This directive indicates that (most of) the response must not be transformed. (The RFC allows for transformation of some fields, even with this header present.)
+>`Cache-Control : no-transform` 不允许代理对响应结果进行变换
+
+`Cache-Control : must-revalidate`   
+`Cache-Control : proxy-revalidate`   
+**Forces** the proxy to revalidate the page even if the client will accept a stale response. **Read the RFC before using these headers, there are restrictions on their use.**
+
+
+
+**Caveats and gotchas(警告和陷阱)**
+
+>`HTTP/1.0` has minimal cache control and only understands the `Pragma: no-cache` header. Caches using `HTTP/1.0` will **ignore** the `Expires` and `Cache-Control` headers.
+>Pragma: no-cache：跟Cache-Control: no-cache相同，Pragma: no-cache兼容http 1.0 ，Cache-Control: no-cache是http 1.1提供的
+
+>None of the Cache-Control directives ensure privacy or security of data. The directives "private" and "no-store" assist in privacy and security, but they are not intended to substitute for authentication and encryption.
+
+This article is not a substitute for the RFC. If your are implementing the `Cache-Control` headers, **do** read the RFC for a detailed description of what each header means and what the limits are.
+
+**Final words**
+
+Caching is a reality of the Internet and enables efficient usage of bandwidth. Your clients probably view your pages through a cache, and sometimes multiple caches. Applying cache headers to your pages protects the page content and allows your clients to save their bandwidth.
