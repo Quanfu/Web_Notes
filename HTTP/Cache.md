@@ -1,3 +1,95 @@
+#HTTP　Cache Headers 手册
+From (http://dev.mobify.com/blog/beginners-guide-to-http-cache-headers/)
+
+
+##Cache Headers
+
+###1. cache-control
+If there were a default super-header for caching behaviour, this would be it. Typically you will see a string of settings for this header along the lines of:
+
+`
+cache-control:private,max-age=0,no-cache
+`
+
+These settings are called cache response directives, and are as follows:
+
+`private|public`
+
+Essentially they let intermediary caches know that a given response is specific to the end user and should not be cached. Do not make the mistake of assuming that this in any way provides you with some kind of security or privacy: Keep using SSL for that.
+
+`no-cache`
+
+When used alone, this guy lets you specify that caches should revalidate this resource every time, typically using the "etag" header outlined below. The fun bit comes when you specify a field name after the no-cache directive, which lets caches know that you can cache the response, provided that the named fields are stripped out; cookies would be a good example of why you might want to do this. I should note that older User Agents won't respect this trick, so you shouldn't depend on it too much.
+
+`no-store`
+
+This guy lets you specify that caches should not store this response. I know that may be surprising given the name, but there it is. Actually, if the cache in question is following the rules, it will also ensure that no part of the request is stored either. "no-store" was designed with sensitive information requirements in mind, and so is kind of like the G-Man of cache headers.
+
+`max-age`
+
+Traditionally, you would let caches know when an asset is expired by using the aptly-named "expires" header, discussed below. However, if you want to be more explicit, you may set a max-age, in seconds, which will override the expires header. Further reasons to use this directive are discussed below under the Caveats section.
+
+`s-maxage`
+
+Using our keen deductive skills, we can see some similarities between this header and the last one. "s-" is for shared, as in "shared cache", as in CDN. These directives are explicitly for CDNs and other intermediary caches. When present, this directive overrides both the max-age and expires header, and most well behaved CDNs will obey it.
+
+`must-revalidate`
+
+This one is fun, although not applicable to most of us. For the sake of completeness, and in case your dev-team has some kind of trivia night where free beer is involved, we'll discuss it. Essentially, if your responses include this directive, you are telling the cache that it needs to revalidate a cached asset on any subsequent request, and that it may not, under any circumstance, serve stale content (which is sometimes a desired behaviour). Of course, I say "under any circumstances", but what I really mean is that there's a big fat asterisk next to that claim. If your users are under "severe connectivity constraints", (perhaps they are browsing from low-earth-orbit), then their user agents may serve stale content, provided they pinky-swear to tell their users that they've done so. Apparently this directive exists because some protocols require it, typically involving transactions.
+
+>**edit:** Apparently I would loose at trivia night. 
+
+>`must-revalidate` is actually intended to override any configuration where the cache is otherwise configured to serve stale content. The client is required to send the request headers back and receive confirmation that the asset hasn’t changed. Thanks to[https://twitter.com/ericlaw](http://dev.mobify.com/blog/@ericlaw) for catching it.
+
+`no-transform`
+
+“Transform into what?”, you’re surely asking. Some proxies will convert image formats and other documents to improve performance. Presumably this was thought to be a feature that you should have to opt out of. If you don’t like the idea of your CDN making automated guesses about how your content should be encoded or formatted, I suggest including this header.
+
+`proxy-revalidate`
+
+Essentially the same as the "must-revalidate" directive, except it's just for the shared caches. Why didn't they call it "s-mustrevalidate"? I'm sure there exists a mailing list somewhere where you could find that debate, but for now, just know that like "s-maxage", this directive is designed for intermediary proxies and not user agents. The idea here is that you validate each end-user only once between the proxy and their agent, but each new user should revalidate back to the server. I suspect if your service requires this feature, you probably already know about it.
+
+As always, you should check out the [spec](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9) for these settings if you need any clarification.
+
+###2. expires
+Back in the day, this was the standard way to specify when an asset expired, and is just a basic date-time stamp. It is still fairly useful for older user agents, which cryptowebologists assure us still roam in the uncharted territories. On most modern systems, the "cache-control" headers "max-age" and "s-maxage" will take precedence, but it's always good practice to set a matching value here for compatibility. Just make sure you format the date correctly, or it will be evaluated as an expired date:
+```
+Thu,01Dec198320:00:00GMT
+```
+Try to avoid setting the value to more than one year out as that breaks the specification, (see below for a discussion on cache time settings).
+
+###3. etag
+Short for "entity-tag", the etag is a unique identifier for the resource being requested, typically comprised of the hash of that resource, or a hash of the timestamp the resource was updated. Basically, this lets a client ask smarter questions of the CDNs, like "give me X if it's different than the etag I already have."
+
+There's a neat trick you can do with etags, which is to make them weak validators. This basically tells the user that although they are not the same, the two resources are functionally equivalent. Support for this feature is considered optional though, so you will want to do some testing with your providers, (discussed below).
+
+###4. vary
+Oh wow. This one is fun. The “vary” header is extremely powerful, but can trip up what would otherwise be a simple caching scheme. IE has had issues handling the "vary" header in the past, and by all accounts still struggles with getting this right. At one point, even Chrome was handling this in a funny way. Essentially, "vary" lets the caches know which of the headers to use to figure out if they have a valid cache for a request; if a cache were a giant key-value store, adding "vary" fields appends those values to the key, thus changing which requests are considered valid matches for what exists in the cache.
+
+You would commonly set this to something like "Accept-Encoding" to make sure your gzip'ed assets get served where appropriate, saving you all that bandwidth you might otherwise waste. Additionally, setting:
+
+`vary: User-Agent`
+will put you in the SEO good-books if you happen to be serving different versions of your HTML/CSS depending on the User-Agent of the request. Google will note the header and have the Googlebot crawl your mobile content as well.
+
+###5. pragma
+昔日的怪兽`pragma` 可以做很多事情，现在它的大部分实现已经被新的实现方式所代替。过去常见的用法是：
+Another beast from the days of yore, the "pragma" header does many things, and most of them are honoured by newer implementations. The directive we're most concerned with is:
+```
+pragma: no-cache
+```
+which gets interpreted by newer implementations as:
+已经被翻译为：
+```
+cache-control: no-cache
+```
+
+This guy is a request header, so you generally don't need to worry about it anyway, but for the sake of completeness there it is. No new HTTP directives will be defined for "pragma" going forward.
+
+
+
+
+#关于HTTP Cache 的介绍
+
 原文（英文）地址： [http://www.mnot.net/cache_docs/](http://www.mnot.net/cache_docs/)  版权声明：[署名-非商业性使用-禁止演绎 2.0](http://creativecommons.org/licenses/by-nc-nd/2.0/deed.zh)  
 
 这是一篇知识性的文档，主要目的是为了让Web缓存相关概念更容易被开发者理解并应用于实际的应用环境中。为了简要起见，某些实现方面的细节被简化或省略了。如果你更关心细节实现则完全不必耐心看完本文，后面参考文档和更多深入阅读部分可能是你更需要的内容。  
@@ -14,9 +106,7 @@
     2. Pragma HTTP头信息（为什么不起作用）；
     3. 使用Expires（过期时间）HTTP头信息控制保鲜期；
     4. Cache-Control（缓存控制） HTTP头信息；  
-
     5. 校验参数和校验；
-
 6. 创建利于缓存网站的窍门；
 7. 编写利于缓存的脚本；
 8. 常见问题解答；
@@ -25,30 +115,30 @@
 11. 参考文档和深入阅读；
 12. 关于本文档；
 
-#### 什么是Web缓存，为什么要使用它？
+## 什么是Web缓存，为什么要使用它？
 
-Web缓存位于Web服务器之间（1个或多个，内容源服务器）和客户端之间（1个或多个）：缓存会根据进来的请求保存输出内容的副本，例如html页面， 图片，文件（统称为副本），然后，当下一个请求来到的时候：如果是相同的URL，缓存直接使用副本响应访问请求，而不是向源服务器再次发送请求。  
+Web缓存位于Web服务器之间（一个或多个，内容源服务器）和客户端之间（一个或多个）：缓存会根据进来的请求保存输出内容的副本，例如html页面、 图片，文件（统称为副本），然后，当下一个请求来到的时候：如果是相同的URL，缓存直接使用副本响应访问请求，而不是向源服务器再次发送请求。  
   
 使用缓存主要有2大理由：  
 
-- **减少相应延迟**：因为请求从缓存服务器（离客户端更近）而不是源服务器被相应，这个过程耗时更少，让web服务器看上去相应更快；
+- **减少响应延迟**：因为请求从缓存服务器（离客户端更近）而不是源服务器被响应，这个过程耗时更少，让web服务器看上去相应更快；
 - **减少网络带宽消耗**：当副本被重用时会减低客户端的带宽消耗；客户可以节省带宽费用，控制带宽的需求的增长并更易于管理。
 
-#### 缓存的类型
+## 缓存的类型
 
-##### 浏览器缓存
+### 浏览器缓存
 
 对于新一代的Web浏览器来说（例如：IE，Firefox）：一般都能在设置对话框中发现关于缓存的设置，通过在你的电脑上僻处一块硬盘空间用于存储你已经看过的网站的副本。浏览器缓存根据非常简单的规则进行工作：在同一个会话过程中（在当前浏览器没有被关闭之前）会检查一次并确定缓存的副本足够新。这个缓存对于用户点击“后退”或者点击刚访问过的链接特别有用，如果你浏览过程中访问到同一个图片，这些图片可以从浏览器缓存中调出而即时显现。  
 
-##### 代理服务器缓存
+### 代理服务器缓存
 
 Web代理服务器使用同样的缓存原理，只是规模更大。代理服务器群为成百上千用户服务使用同样的机制；大公司和ISP经常在他们的防火墙上架设代理缓存或者单独的缓存设备；
 
-由于带路服务器缓存并非客户端或者源服务器的一部分，而是位于原网络之外，请求必须路由到他们才能起作用。一个方法是手工设置你的浏览器：告诉浏览器使用 那个代理，另外一个是通过中间服务器：这个中间服务器处理所有的web请求，并将请求转发到后台网络，而用户不必配置代理，甚至不必知道代理的存在；  
+由于带路服务器缓存并非客户端或者源服务器的一部分，而是位于原网络之外，请求必须路由到他们才能起作用。一个方法是手工设置你的浏览器：告诉浏览器使用那个代理，另外一个是通过中间服务器：这个中间服务器处理所有的web请求，并将请求转发到后台网络，而用户不必配置代理，甚至不必知道代理的存在；  
 
 代理服务器缓存：是一个共享缓存，不只为一个用户服务，经常为大量用户使用，因此在减少相应时间和带宽使用方面很有效：因为同一个副本会被重用多次。  
 
-##### 网关缓存
+###网关缓存
 
 也被称为反向代理缓存或间接代理缓存，网关缓存也是一个中间服务器，和内网管理员部署缓存用于节省带宽不同：网关缓存一般是网站管理员自己部署：让他们的网站更容易扩展并获得更好的性能；  
 请求有几种方法被路由到网关缓存服务器上：其中典型的是让用一台或多台负载均衡服务器从客户端看上去是源服务器；  
@@ -57,7 +147,7 @@ Web代理服务器使用同样的缓存原理，只是规模更大。代理服�
   
 本问主要关注于浏览器和代理缓存，当然，有些信息对于网关缓存也同样有效；  
 
-#### Web缓存无害吗？为什么要鼓励缓存？
+## Web缓存无害吗？为什么要鼓励缓存？
 
 Web缓存在互联网上最容易被误解的技术之一：网站管理员经常怕对网站失去控制，由于代理缓存会“隐藏”他们的用户，让他们感觉难以监控谁在使用他们的网站。  
 不幸的是：就算不考虑Web缓存，互联网上也有很多网站使用非常多的参数以便管理员精确地跟踪用户如何使用他们的网站；如果这类问题也是你关心的，本文将告诉你如何获得精确的统计而不必将网站设计的非常缓存不友好。  
@@ -72,7 +162,7 @@ CDN是另外一个有趣的方向，和其他代理缓存不同：CDN的网关�
 事实上，无论你是否喜欢，代理服务器和浏览器都回启用缓存。如果你没有配置网站正确的缓存，他们会按照缺省或者缓存管理员的策略进行缓存。  
   
 
-#### 缓存如何工作
+## 缓存如何工作
 
 所有的缓存都用一套规则来帮助他们决定什么时候使用缓存中的副本提供服务（假设有副本可用的情况下）；一些规则在协议中有定义（HTTP协议1.0和1.1），一些规则由缓存的管理员设置（浏览器的用户或者代理服务器的管理员）；  
 一般说来：遵循以下基本的规则（不必担心，你不必知道所有的细节，细节将随后说明）  
@@ -93,14 +183,14 @@ CDN是另外一个有趣的方向，和其他代理缓存不同：CDN的网关�
 而经缓存器校验后发现副本的原件没有变化，系统也会避免将副本内容从源服务器整个重新传输一遍。  
   
 
-#### 如何控制（控制不）缓存
+## 如何控制（控制不）缓存
 
 有很多工具可以帮助设计师和网站管理员调整缓存服务器对待网站的方式，这也许需要你亲自下手对服务器的配置进行一些调整，但绝对值得；了解如何使用这些工具请参考后面的实现章节；  
 
-##### HTML meta标签和HTTP 头信息
+### HTML meta标签和HTTP 头信息
 
-HTML的编写者会在文档的<HEAD>区域中加入描述文档的各种属性，这些META标签常常被用于标记文档不可以被缓存或者标记多长时间后过期；  
-META标签使用很简单：但是效率并不高，因为只有几种浏览器会遵循这个标记（那些真正会“读懂”HTML的浏览器），没有一种缓存代理服务器能遵循这个 规则（因为它们几乎完全不解析文档中HTML内容）；有事会在Web页面中增加：Pragma: no-cache这个META标记，如果要让页面保持刷新，这个标签其实完全没有必要。  
+HTML的编写者会在文档的`<HEAD>`区域中加入描述文档的各种属性，这些META标签常常被用于标记文档不可以被缓存或者标记多长时间后过期；  
+META标签使用很简单：但是**效果并不好**，因为只有几种浏览器会遵循这个标记（那些真正会“读懂”HTML的浏览器），没有一种缓存代理服务器能遵循这个 规则（因为它们几乎完全不解析文档中HTML内容）；有时会在Web页面中增加：`Pragma: no-cache`**这个META标记，如果要让页面保持刷新，这个标签其实完全没有必要**。  
 如果你的网站托管在ISP机房中，并且机房可能不给你权限去控制HTTP的头信息（如：`Expires`和`Cache-Control`），大声控诉：这些机制对于你的工作来说是必须的；  
 另外一方面： HTTP头信息可以让你对浏览器和代理服务器如何处理你的副本进行更多的控制。他们在HTML代码中是看不见的，一般由Web服务器自动生成。但是，根据 你使用的服务，你可以在某种程度上进行控制。在下文中：你将看到一些有趣的HTTP头信息，和如何在你的站点上应用部署这些特性。  
   
@@ -120,11 +210,11 @@ Content-Type: text/html
   
 在头信息空一行后是HTML代码的输出，关于如何设置HTTP头信息请参考实现章节；  
 
-##### Pragma HTTP头信息 (为什么它不起作用)
+### Pragma HTTP头信息 (为什么它不起作用)
 
 很多人认为在HTTP头信息中设置了`Pragma: no-cache`后会让内容无法被缓存。但**事实并非如此**：HTTP的规范中，响应型头信息没有任何关于Pragma属性的说明，而讨论了的是请求型头信息 `Pragma`属性（头信息也由浏览器发送给服务器），虽然少数集中缓存服务器会遵循这个头信息，但大部分不会。用了`Pragma`也不起什么作用，要用就使用下列头信息：  
 
-##### 使用Expires（过期时间）HTTP头信息来控制保鲜期
+### 使用Expires（过期时间）HTTP头信息来控制保鲜期
 
 `Expires`（过期时间） 属性是HTTP控制缓存的基本手段，这个属性告诉缓存器：相关副本在多长时间内是新鲜的。过了这个时间，缓存器就会向源服务器发送请求，检查文档是否被修改。**几乎所有的缓存服务器**都支持`Expires`（过期时间）属性；  
   
@@ -140,7 +230,7 @@ Expires: Fri, 30 Oct 1998 14:19:41 GMT
 虽然过期时间属性非常有用，但是它还是有些局限，首先：是牵扯到了日期，这样Web服务器的时间和缓存服务器的时间必须是同步的，如果有些不同步，要么是应该缓存的内容提前过期了，要么是过期结果没及时更新。  
 还有一个过期时间设置的问题也不容忽视：如果你设置的过期时间是一个固定的时间，如果你返回内容的时候又没有连带更新下次过期的时间，那么之后所有访问请求都会被发送给源Web服务器，反而增加了负载和响应时间；  
 
-##### Cache-Control（缓存控制） HTTP头信息
+### Cache-Control（缓存控制） HTTP头信息
 
 HTTP 1.1介绍了另外一组头信息属性：Cache-Control响应头信息，让网站的发布者可以更全面的控制他们的内容，并定位过期时间的限制。  
 有用的 Cache-Control响应头信息包括：  
@@ -160,7 +250,7 @@ Cache-Control: max-age=3600, must-revalidate
 如果你计划试用`Cache-Control`属性，你应该看一下这篇HTTP文档，详见参考和深入阅读；  
   
 
-##### 校验参数和校验
+### 校验参数和校验
 
 在Web缓存如何工作： 我们说过：校验是当副本已经修改后，服务器和缓存之间的通讯机制；使用这个机制：缓存服务器可以避免副本实际上仍然足够新的情况下重复下载整个原件。  
 校验参数非常重要，如果1个不存在，并且没有任何信息说明保鲜期（`Expires`或`Cache-Control`）的情况下，缓存将不会存储任何副本；  
@@ -170,7 +260,7 @@ HTTP 1.1介绍了另外一个校验参数： `ETag`，服务器是服务器生�
 所有新一代的Web服务器都对静态内容（如：文件）自动生成`ETag`和`Last-Modified`头信息，而你不必做任何设置。但是，服务器对于动态内容（例如：CGI,ASP或数据库生成的网站）并不知道如何生成这些信息，参考一下编写利于缓存的脚本章节；  
   
 
-#### 创建利于缓存网站的窍门
+## 创建利于缓存网站的窍门
 
 除了使用新鲜度信息和校验，你还有很多方法使你的网站缓存友好。  
 
@@ -184,7 +274,7 @@ HTTP 1.1介绍了另外一个校验参数： `ETag`，服务器是服务器生�
 - **减少试用SSL**，加密的页面不会被任何共享缓存服务器缓存，只在必要的时候使用，并且在SSL页面上减少图片的使用；
 - **使用可缓存性评估引擎**，这对于你实践本文的很多概念都很有帮助；
 
-#### 编写利于缓存的脚本
+## 编写利于缓存的脚本
 
 脚本缺省不会返回校验参数（返回Last-Modified或`ETag`头信息）或其他新鲜度信息（`Expires`或`Cache-Control`），有些动态脚本的确是动态内容（每次相应内容都不一样），但是更多（搜索引擎，数据库引擎网站）网站还是能从缓存友好中获益的。  
 一般说来，如果脚本生成的输出在未来一段时间（几分钟或者几天）都是可重复复制的，那么就是可缓存的。如果脚本输出内容只随URL变化而变化，也是可缓存的；但如果输出会根据cookie，认证信息或者其他外部条件变化，则还是不可缓存的。  
@@ -201,22 +291,22 @@ HTTP 1.1介绍了另外一个校验参数： `ETag`，服务器是服务器生�
 - 生成并返回`Content-Length`头信息，如果方便的话，这个属性让你的脚本在可持续链接模式时：客户端可以通过一个TCP/IP链接同时请求多个副本，而不是为每次请求单独建立链接，这样你的网站相应会快很多；
 具体定义请参考实现章节。
 
-#### 常见问题解答
+## 常见问题解答
 
-##### 让网站变得可缓存的要点是什么？
+### 让网站变得可缓存的要点是什么？
 
 好的策略是确定那些内容最热门，大量的复制（特别是图片）并针对这些内容先部署缓存。  
 
-##### 如何让页面通过缓存达到最快相应？
+### 如何让页面通过缓存达到最快相应？
 
 缓存最好的副本是那些可以长时间保持新鲜的内容；基于校验虽然有助于加快相应，但是它不得不和源服务器联系一次去检查内容是否够新，如果缓存服务器上就知道内容是新的，内容就可以直接相应返回了。  
 
-##### 我理解缓存是好的，但是我不得不统计多少人访问了我的网站！
+### 我理解缓存是好的，但是我不得不统计多少人访问了我的网站！
 
 如果你必须知道每次页面访问的，选择【一】个页面上的小元素，或者页面本身，通过适当的头信息让其不可缓存，例如： 可以在每个页面上部署一个1x1像素的透明图片。Referer头信息会有包含这个图片的每个页面信息；  
 明确一点：这个并不会给你一个关于你用户精确度很高的统计，而且这对互联网和你的用户这都不太好，消耗了额外的带宽，强迫用户去访问无法缓存的内容。了解更多信息，参考访问统计资料。  
 
-##### 我如何能看到HTTP头信息的内容？
+### 我如何能看到HTTP头信息的内容？
 
 很多浏览器在页面属性或类似界面中可以让你看到Expires 和Last-Modified信息；如果有的话：你会找到页面信息的菜单和页面相关的文件（如图片），并且包含他们的详细信息；  
 看到完整的头信息，你可以用telnet手工连接到Web服务器；  
@@ -231,7 +321,7 @@ Host: www.example.com [return][return]
 在[回车]处按键盘的回车键；在最后，要按2次回车，然后，就会输出头信息及完整页面，如果只想看头信息，将GET换成HEAD。  
   
 
-##### 我的页面是密码保护的，代理缓存服务器如何处理他们？
+### 我的页面是密码保护的，代理缓存服务器如何处理他们？
 
 缺省的，网页被HTTP认证保护的都是私密内容，它们不会被任何共享缓存保留。但是，你可以通过设置Cache-Control: public让认证页面可缓存，HTTP 1.1标准兼容的缓存服务器会认出它们可缓存。  
 如果你认为这些可缓存的页面，但是需要每个用户认证后才能看，可以组合使用`Cache-Control: public`和`no-cache`头信息，高速缓存必须在提供副本之前，将将新客户的认证信息提交给源服务器。设置就是这样：  
@@ -240,38 +330,38 @@ Cache-Control: public, no-cache
 ```
 无论如何：这是减少认证请求的最好方法，例如： 你的图片是不机密的，将它们部署在另外一个目录，并对此配置服务器不强制认证。这样，那些图片会缺省都缓存。  
 
-##### 我们是否要担心用户通过cache访问我的站点？
+### 我们是否要担心用户通过cache访问我的站点？
 
 代理服务器上SSL页面不会被缓存（不推荐被缓存），所以你不必为此担心。但是，由于缓存保存了非SSL请求和从他们抓取的URL，你要意识到没有安全保护的网站，可能被不道德的管理员可能搜集用户隐私，特别是通过URL。  
 实际上，位于服务器和客户端之间的管理员可以搜集这类信息。特别是通过CGI脚本在通过URL传递用户名和密码的时候会有很大问题；这对泄露用户名和密码是一个很大的漏洞；  
 如果你初步懂得互联网的安全机制，你不会对缓存服务器有任何。  
 
-##### 我在寻找一个包含在Web发布系统解决方案，那些是比较有缓存意识的系统？
+### 我在寻找一个包含在Web发布系统解决方案，那些是比较有缓存意识的系统？
 
 这很难说，一般说来系统越复杂越难缓存。最差就是全动态发布并不提供校验参数；你无发缓存任何内容。可以向系统提供商的技术人员了解一下，并参考后面的实现说明。  
 
-##### 我的图片设置了1个月后过期，但是我现在需要现在更新。
+### 我的图片设置了1个月后过期，但是我现在需要现在更新。
 
 过期时间是绕不过去的，除非缓存（浏览器或者代理服务器）空间不足才会删除副本，缓存副本在过期之间会被一直使用。  
 最好的办法是改变它们的链接，这样，新的副本将会从源服务器上重新下载。记住：引用它们的页面本身也会被缓存。因此，使用静态图片和类似内容是很容易缓存的，而引用他们的HTML页面则要保持非常更新；  
 如果你希望对指定的缓存服务器重新载入一个副本，你可以强制使用“刷新”（在FireFox中在reload的时候按住shift键：就会有前面提到恶Pragma: no-cache头信息发出）。或者你可以让缓存的管理员从他们的界面中删除相应内容；  
 
-##### 我运行一个Web托管服务，如何让我的用户发布缓存友好的网页？
+### 我运行一个Web托管服务，如何让我的用户发布缓存友好的网页？
 
 如果你使用apahe，可以考虑允许他们使用.htaccess文件并提供相应的文档；  
 另外一方面： 你也可以考虑在各种虚拟主机上建立各种缓存策略。例如： 你可以设置一个目录 /cache-1m 专门用于存放访问1个月的访问，另外一个 /no-cache目录则被用提供不可存储副本的服务。  
 无论如何：对于大量用户访问还是应该用缓存。对于大网站，这方面的节约很明显（带宽和服务器负载）；  
 
-##### 我标记了一些网页是可缓存的，但是浏览器仍然每次发送请求给服务。如何强制他们保存副本？
+### 我标记了一些网页是可缓存的，但是浏览器仍然每次发送请求给服务。如何强制他们保存副本？
 
 缓存服务器并不会总保存副本并重用副本；他们只是在特定情况下会不保存并使用副本。所有的缓存服务器都回基于文件的大小，类型（例如：图片 页面），或者服务器空间的剩余来确定如何缓存。你的页面相比更热门或者更大的文件相比，并不值得缓存。  
 所以有些缓存服务器允许管理员根据文件类型确定缓存副本的优先级，允许某些副本被永久缓存并长期有效；  
 
-#### 缓存机制的实现 - Web服务器端配置
+## 缓存机制的实现 - Web服务器端配置
 
 一般说来，应该选择最新版本的Web服务器程序来部署。不仅因为它们包含更多利于缓存的功能，新版本往往在性能和安全性方面都有很多的改善。  
 
-##### Apache HTTP服务器
+###Apache HTTP服务器
 
 Apache有些可选的模块来包含这些头信息： 包括`Expires`和`Cache-Control`。 这些模块在1.2版本以上都支持；  
 这些模块需要和apache一起编译；虽然他们已经包含在发布版本中，但缺省并没有启用。为了确定相应模块已经被启用：找到httpd程序并运行httpd -l 它会列出可用的模块，我们需要用的模块是mod_expires和mod_headers  
@@ -301,26 +391,26 @@ Header append Cache-Control "public, must-revalidate"
 Apache 2.0的配置和1.3类似，更多信息可以参考2.0的[mod_expires](http://httpd.apache.org/docs/2.2/mod/mod_expires.html)和[mod_headers文档](http://httpd.apache.org/docs/2.2/mod/mod_headers.html)；  
   
 
-##### Microsoft IIS服务器
+### Microsoft IIS服务器
 
 Microsoft的IIS可以非常容易的设置头信息，注意：这只针对IIS 4.0服务器，并且只能在NT服务器上运行。  
 为网站的一个区域设置头信息，先要到管理员工具界面中，然后设置属性。选择HTTP Header选单，你会看到2个有趣的区域：启用内容过期和定制HTTP头信息。头一个设置会自动配置，第二个可以用于设置Cache-Control头信息；  
 设置asp页面的头信息可以参考后面的ASP章节，也可以通过ISAPI模块设置头信息，细节请参考MSDN。  
   
 
-##### Netscape/iPlanet企业服务器
+### Netscape/iPlanet企业服务器
 
 3.6版本以后，Netscape/iPlanet已经不能设置Expires头信息了，他从3.0版本开始支持HTTP 1.1的功能。这意味着HTTP 1.1的缓存（代理服务器/浏览器）优势都可以通过你对Cache-Control设置来获得。  
 使用Cache-Control头信息，在管理服务器上选择内容管理|缓存设置目录。然后：使用资源选择器，选择你希望设置头信息的目录。设置完头信息后，点击“OK”。更多信息请参考[Netscape/iPlanet企业服务器的手册](http://developer.netscape.com/docs/manuals/enterprise/admnunix/content.htm#1006282)。  
   
 
-##### 缓存机制的实现：服务器端脚本
+###缓存机制的实现：服务器端脚本
 
 需要注意的一点是：也许服务器设置HTTP头信息比脚本语言更容易，但是两者你都应该使用。  
 因为服务器端的脚本主要是为了动态内容，他本身不产生可缓存的文件页面，即使内容实际是可以缓存的。如果你的内容经常改变，但是不是每次页面请求都改变， 考虑设置一个Cache-Control: max-age头信息；大部分用户会在短时间内多次访问同一页面。例如： 用户点击“后退”按钮，即使没有新内容，他们仍然要再次从服务器下载内容查看。  
   
 
-##### CGI程序
+###CGI程序
 
 CGI脚本是生成内容最流行的方式之一，你可以很容易在发送内容之前的扩展HTTP头信息；大部分CGI实现都需要你写 Content-Type头信息，例如这个Perl脚本：  
 ```
@@ -344,12 +434,12 @@ HTTP_IF_MODIFIED_SINCE = Fri, 30 Oct 1998 14:19:41 GMT 
 参考一下[cgi_buffer](http://www.mnot.net/cgi_buffer/)库，一个自动处理`ETag`的生成和校验的库，生成Content-Length属性和对内容进行gzip压缩。在Python脚本中也只需加入一行；  
   
 
-##### 服务器端包含 Server Side Includes
+### 服务器端包含 Server Side Includes
 
 SSI（经常使用.shtml扩展名）是网站发布者最早可以生成动态内容的方案。通过在页面中设置特别的标记，也成为一种嵌入HTML的脚本；  
 大部分SSI的实现无法设置校验器，于是无法缓存。但是Apache可以通过对特定文件的组执行权限设置实现允许用户设置那种SSI可以被缓存；结合XbitHack调整整个目录。更多文档请参考[mod_include文档](http://httpd.apache.org/docs/1.3/mod/mod_include.html)。  
 
-##### PHP
+###PHP
 
 PHP是一个内建在web服务器中的服务器端脚本语言，当做为HTML嵌入式脚本，很像SSI，但是有更多的选项，PHP可以在各种Web服务器上设置为CGI模式运行，或者做为Apache的模块；  
 缺省PHP生成副本没有设置校验器，于是也无法缓存，但是开发者可以通过Header()函数来生成HTTP的头信息；  
@@ -368,7 +458,7 @@ PHP是一个内建在web服务器中的服务器端脚本语言，当做为HTML�
 更多信息，请参考[header相关的文档](http://www.php.net/manual/function.header.php3)；  
 也请参考一下[cgi_buffer](http://www.mnot.net/cgi_buffer/)库，自动处理`ETag`的生成和校验，Content-Length生成和内容的gzip压缩，PHP脚本只需包含1行代码；  
 
-##### Cold Fusion
+### Cold Fusion
 
 [Cold Fusion](http://www.adobe.com/products/coldfusion/)是Macromedia的商业服务器端脚本引擎，并且支持多种Windows平台，Linux平台和多种Unix平台。Cold Fusion通过CFHEADER标记设置HTTP头信息相对容易。可惜的是：以下的Expires头信息的设置有些容易误导；  
 ```
@@ -383,7 +473,7 @@ PHP是一个内建在web服务器中的服务器端脚本语言，当做为HTML�
 记住：Web服务器也会将头信息设置转给Cold Fusion(做为CGI运行的时候)，检查你的服务器设置并确定你是否可以利用服务器设置代替Cold Fusion。   
   
 
-##### ASP和ASP.NET
+### ASP和ASP.NET
 
 在asp中设置HTTP头信息是：确认Response方法先于HTML内容输出前被调用，或者使用 Response.Buffer暂存输出；同样的：注意某些版本的IIS缺省设置会输出Cache-Control: private 头信息，必须声明成public才能被共享缓存服务器缓存。  
 IIS的ASP和其他web服务器都允许你设置HTTP头信息，例如： 设置过期时间，你可以设置Response对象的属性；  
@@ -406,10 +496,10 @@ Response.Cache.SetCacheability ( HttpCacheability.Public ) ;
 参考[MSDN文档](http://msdn.microsoft.com/library/default.asp?url=/library/en-us/cpguide/html/cpconaspoutputcache.asp)可以找到更多相关新年系；  
   
 
-#### 参考文档和深入阅读
+## 参考文档和深入阅读
 
 
-##### [HTTP 1.1 规范定义](http://www.ietf.org/rfc/rfc2616.txt)
+### [HTTP 1.1 规范定义](http://www.ietf.org/rfc/rfc2616.txt)
 
 HTTP 1.1的规范有大量的扩展用于页面缓存，以及权威的接口实现指南，参考章节：13, 14.9, 14.21, 以及 14.25.  
   
@@ -421,28 +511,28 @@ HTTP 1.1的规范有大量的扩展用于页面缓存，以及权威的接口实
     - [section14.29](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.29) (Last-Modified) is the most common validation method  
     - [section3.11](http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.11) (Entity Tags) covers the extra validation method  
 
-##### [Web-Caching.com](http://www.web-caching.com/)
+###[Web-Caching.com](http://www.web-caching.com/)
 
 非常精彩的介绍缓存相关概念，并介绍其他在线资源。  
 [  
 ](http://www.goldmark.org/netrants/webstats/)
 
-##### [关于非连续性访问统计](http://www.goldmark.org/netrants/webstats/)
+### [关于非连续性访问统计](http://www.goldmark.org/netrants/webstats/)
 
 Jeff Goldberg内容丰富的演说告诉你为什么不应该过度依赖访问统计和计数器；  
   
 
-##### [可缓存性检测引擎](http://www.mnot.net/cacheability/)
+### [可缓存性检测引擎](http://www.mnot.net/cacheability/)
 
 可缓存的引擎设计，检测网页并确定其如何与Web缓存服务器交互， 这个引擎配合这篇指南是一个很好的调试工具，  
   
 
-##### [cgi_buffer库](http://www.mnot.net/cgi_buffer/)
+### [cgi_buffer库](http://www.mnot.net/cgi_buffer/)
 
 包含库：用于CGI模式运行的Perl/Python/PHP脚本，自动处理`ETag`生成/校验，`Content-Length`生成和内容压缩。正确地。 Python版本也被用作其他大量的CGI脚本。  
   
 
-#### 关于本文档
+## 关于本文档
 
 本文版权属于Mark Nottingham <[mnot@pobox.com](mailto:mnot@pobox.com)>，本作品遵循[创作共用版权](http://creativecommons.org/licenses/by-nc-nd/2.0/deed.zh)。  
 如果你镜像本文，请通过以上邮件告知，这样你可以在更新时被通知；  
@@ -485,7 +575,7 @@ Indicates that the item must not be stored in nonvolatile storage, and should be
 
 `Cache-Control : no-transform`   
 Proxies may convert data from one storage system to another. This directive indicates that (most of) the response must not be transformed. (The RFC allows for transformation of some fields, even with this header present.)
->`Cache-Control : no-transform` 不允许代理对响应结果进行变换
+>`Cache-Control : no-transform` 不允许 代理 对响应结果进行变换
 
 `Cache-Control : must-revalidate`   
 `Cache-Control : proxy-revalidate`   
