@@ -12,7 +12,7 @@ Cookie意为“甜饼”，是由W3C组织提出，最早由Netscape社区发展
 
 Cookie实际上是一小段的文本信息。客户端请求服务器，如果服务器需要记录该用户状态，就使用response向客户端浏览器颁发一个Cookie。客户端浏览器会把Cookie保存起来。当浏览器再请求该网站时，浏览器把请求的网址连同该Cookie一同提交给服务器。服务器检查该Cookie，以此来辨认用户状态。服务器还可以根据需要修改Cookie的内容。
 
-![Cookie](/Pics/CookieSession/1459712229883_661590.jpg)
+![Cookie](../Pics/CookieSession/1459712229883_661590.jpg)
 
 ###会话跟踪
 在程序中，**会话跟踪是很重要的事情**。
@@ -52,7 +52,7 @@ Cookie就是由服务器发给客户端的特殊信息，而这些信息以文�
 4. 服务器端发送一个HTTP响应到客户端
 
 这个通讯过程也可以用以下下示意图来描述：
-![Cookie流程](/Pics/CookieSession/1459712229883_577648.jpg)
+![Cookie流程](../Pics/CookieSession/1459712229883_577648.jpg)
 
 在客户端的第二次请求中包含的Cookie头部中，提供给了服务器端可以用来唯一标识客户端身份的信息。这时，服务器端也就可以判断客户端是否启用了cookies。尽管，用户可能在和应用程序交互的过程中突然禁用cookies的使用，但是，这个情况基本是不太可能发生的，所以可以不考虑，这在实践中也被证明是对的。
 
@@ -80,7 +80,7 @@ GET /index.php?PHPSESSID=12345 HTTP/1.1 Host: example.org
 ##如何查看Cookie
 
 查看某个网站颁发的Cookie很简单。在Chrome浏览器 Console 栏输入`javascript:alert(document.cookie)`就可以了（需要有网才能查看）。JavaScript脚本会弹出一个对话框显示本网站颁发的所有Cookie的内容，如图所示。
-![查看Cookie](/Pics/CookieSession/1459712229883_528036.jpg)
+![查看Cookie](../Pics/CookieSession/1459712229883_528036.jpg)
 
 上图中弹出的对话框中显示的为Baidu网站的Cookie。其中BAIDUID记录的就是笔者的身份，只是Baidu使用特殊的方法将Cookie信息加密了。
 
@@ -92,7 +92,7 @@ Java中把Cookie封装成了javax.servlet.http.Cookie类。每个Cookie都是该
 
 Cookie对象使用key-value属性对的形式保存用户状态，一个Cookie对象保存一个属性对，一个request或者response同时使用多个Cookie。因为Cookie类位于包javax.servlet.http.*下面，所以JSP中不需要import该类。
 
-![查看Cookie](/Pics/CookieSession/1459712229883_528037.jpg)
+![查看Cookie](../Pics/CookieSession/1459712229883_528037.jpg)
 
 ###设置Cookie的所有属性
 
