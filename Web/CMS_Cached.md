@@ -6,7 +6,6 @@
 
 - [动态缓存和静态缓存的比较](http://www.chedong.com/tech/cache.html#compare)
 - [基于反向代理加速的站点规划](http://www.chedong.com/tech/cache.html#site)  
-
 - [基于apache mod_proxy的反向代理加速实现](http://www.chedong.com/tech/cache.html#apache)
 - [基于squid的反向代理加速实现](http://www.chedong.com/tech/cache.html#squid)
 - [面向缓存的页面设计](http://www.chedong.com/tech/cache.html#page)
@@ -17,7 +16,7 @@ HTTP_HOST/SERVER_NAME和REMOTE_ADDR/REMOTE_HOST需要用 HTTP_X_FORWARDED_HOST/H
 
 ### 静态缓存和动态缓存的比较
 
-静态页面的缓存可能有2种形式：其实主要区别就是CMS是否自己负责关联内容的缓存更新管理。
+静态页面的缓存可能有2种形式：其实主要区别就是**CMS是否自己负责关联内容的缓存更新管理**。
 
 1. 静态缓存：是在新内容发布的同时就立刻生成相应内容的静态页面，比如：2003年3月22日，管理员通过后台内容管理界面录入一 篇文章后，就立刻生成http://www.chedong.com/tech/2003/03/22/001.html这个静态页面，并同步更新相关索 引页上的链接。  
   
@@ -31,11 +30,12 @@ HTTP_HOST/SERVER_NAME和REMOTE_ADDR/REMOTE_HOST需要用 HTTP_X_FORWARDED_HOST/H
 静态缓存的缺点：
 
 - 复杂的触发更新机制：这两种机制在内容管理系统比较简单的时候都是非常适用的。但对于一个关系比较复杂的网站来说，页面之间的逻 辑引用关系就成为一个非常非常复杂的问题。最典型的例子就是一条新闻要同时出现在新闻首页和相关的3个新闻专题中，在静态缓存模式中，每发一篇新文章，除 了这篇新闻内容本身的页面外，还需要系统通过触发器生成多个新的相关静态页面，这些相关逻辑的触发也往往就会成为内容管理系统中最复杂的部分之一。
+
 - 旧内容的批量更新： 通过静态缓存发布的内容，对于以前生成的静态页面的内容很难修改，这样用户访问旧页面时，新的模板根本无法生效。
 
 在动态缓存模式中，每个动态页面只需要关心，而相关的其他页面能自动更新，从而大大减少了设计相关页面更新触发器的需要。  
 
-以前做小型应用的时候也用过类似方式：应用首次访问以后将数据 库的查询结果在本地存成一个文件，下次请求时先检查本地缓存目录中是否有缓存文件，从而减少对后 台数据库的访问。虽然这样做也能承载比较大的负载，但这样的内容管理和缓存管理一体的系统是很难分离的，而且数据完整性也不是很好保存，内容更新时，应用 需要把相应内容的的缓存文件删除。但是这样的设计在缓存文件很多的时候往往还需要将缓存目录做一定的分布，否则一个目录下的文件节点超过3000，rm *都会出错。  
+以前做小型应用的时候也用过类似方式：应用首次访问以后将数据 库的查询结果在本地存成一个文件，下次请求时先检查本地缓存目录中是否有缓存文件，从而减少对后 台数据库的访问。虽然这样做也能承载比较大的负载，但这样的内容管理和缓存管理一体的系统是很难分离的，而且数据完整性也不是很好保存，内容更新时，应用需要把相应内容的的缓存文件删除。但是这样的设计在缓存文件很多的时候往往还需要将缓存目录做一定的分布，否则一个目录下的文件节点超过3000，rm *都会出错。  
 
 这时候，系统需要再次分工，把复杂的内容管理系统分解成：内容输入和缓存这2个相对简单的系统实现。  
 
@@ -57,18 +57,21 @@ ______________________             ___________________
 
 一个利用SQUID对多个站点进行做WEB加速http acceleration方案：  
 原先一个站点的规划可能是这样的：  
+
 200.200.200.207 www.chedong.com   
 200.200.200.208 news.chedong.com   
 200.200.200.209 bbs.chedong.com   
-200.200.200.205 images.chedong.com  
-面向缓存服务器的设计中：所有站点都通过外部DNS指向到同一个IP：200.200.200.200/201这2台缓存服务器上（使用2台是为了 冗余备份）
+200.200.200.205 images.chedong.com
+  
+面向缓存服务器的设计中：所有站点都通过外部DNS指向到同一个IP：200.200.200.200/201这2台缓存服务器上（**使用2台是为了 冗余备份**）
 
                           _____________________   ________  
 www.chedong.com  请求  \ |       cache box     | |        |  / 192.168.0.4   www.chedong.com   
 news.chedong.com 请求   -| 200.200.200.200/201 |-|firewall| -  192.168.0.4   news.chedong.com   
 bbs.chedong.com  请求  / |   /etc/hosts        | |   box  |  \ 192.168.0.3   bbs.chedong.com  
                           ---------------------   --------  
-工作原理：  
+工作原理：
+  
 外部请求过来时，设置缓存根据配置文件进行转向解析。这样，服务器请求就可以转 发到我们指定的内部地址上。  
 在处理多虚拟主机转向方面：mod_proxy比squid要简单一些：可以把不同服务转向后后台多个IP的不同端口上。  
 而squid只能通过禁用DNS解析，然后根据本地的/etc/hosts文件根据请求的域名进行地址转发，后台多个服务器必须使用相同的端口。  
@@ -76,18 +79,21 @@ bbs.chedong.com  请求  / |   /etc/hosts        | |   box  |  \ 192.168.0.3   b
 
 - 配置灵活性提高：可以自己在内部服务器上控制后台服务器的DNS解析，当需要在服务器之间做迁移调整时，就不用大量修改外部DNS配置了，只 需要修改内部DNS实现服务的调整。
 - 数据安全性增加：所有后台服务器可以很方便的被保护在防火墙内。
-- 后 台应用设计复杂程度降低：原先为了效率常常需要建立专门的图片服务器images.chedong.com和负载比较高的应用服务器 bbs.chedong.com分离，在反向代理加速模式中，所有前台请求都通过缓存服务器：实际上就都是静态页面，这样，应用设计时就不用考虑 图片和应用本身分离了，也大大降低了后台内容发布系统设计的复杂程度，由于数据和应用都存放在一起，也方便了文件系统的维护和管理。  
+- 后台应用设计复杂程度降低：原先为了效率常常需要建立专门的图片服务器images.chedong.com和负载比较高的应用服务器 bbs.chedong.com分离，在反向代理加速模式中，所有前台请求都通过缓存服务器：实际上就都是静态页面，这样，应用设计时就不用考虑图片和应用本身分离了，也大大降低了后台内容发布系统设计的复杂程度，由于数据和应用都存放在一起，也方便了文件系统的维护和管理。  
 
 ### 基于Apache mod_proxy的反向代理缓存加速实现
 
 Apache包含了mod_proxy模块，可以用来实现代理服务器，针对后台服务器的反向加速  
-安装apache 1.3.x 编译时：  
+安装apache 1.3.x 编译时：
+```  
 --enable-shared=max --enable-module=most  
+```
 注：Apache 2.x中mod_proxy已经被分离成mod_proxy和mod_cache：同时mod_cache有基于文件和基于内存的不同实现  
 创建/var/www/proxy，设置apache服务所用户可写  
 mod_proxy配置样例：反相代理缓存＋缓存  
 架设前台的www.example.com反向代理后台的www.backend.com的8080端口服务。  
-修改：httpd.conf  
+修改：httpd.conf
+```  
 <VirtualHost *>  
 ServerName www.example.com  
 ServerAdmin admin@example.com  
@@ -110,13 +116,14 @@ CacheDefaultExpire 1
 CacheForceCompletion 80  
 CustomLog /usr/local/apache/logs/dev_access_log combined  
 </VirtualHost>  
-
+```
 ### 基于Squid的反向代理加速实现
 
 Squid是一个更专用的代理服务器，性能和效率会比Apache的mod_proxy高很多。  
 如果需要combined格式日志补丁：  
 [http://www.squid-cache.org/mail-archive/squid-dev/200301/0164.html](http://www.squid-cache.org/mail-archive/squid-dev/200301/0164.html)  
-squid的编译：  
+squid的编译：
+```  
 ./configure --enable-useragent-log  --enable-referer-log --enable-default-err-language=Simplify_Chinese \ --enable-err-languages="Simplify_Chinese English" --disable-internal-dns    
 make  
 #make install  
@@ -164,7 +171,7 @@ cache_store_log none
 acl manager proto cache_object  
 http_access allow manager all  
 cachemgr_passwd pass all  
-  
+```
 ----------------------cut here---------------------------------  
 创建缓存目录：  
 /usr/local/squid/sbin/squid -z  
@@ -193,20 +200,23 @@ header("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT");
 
 - 必须有Expires或Cache-Control: max-age标记设置页面的过期时间：  
 对于静态页面，通过apache的mod_expires根据页面的MIME类型设置缓存周期：比如图片缺省是1个月，HTML页面缺省是2天等。  
+```
 <IfModule mod_expires.c>   
     ExpiresActive on  
     ExpiresByType image/gif "access plus 1 month"  
     ExpiresByType text/css "now plus 2 day"  
     ExpiresDefault "now plus 1 day"  
 </IfModule>  
-  
-对于动态页面，则可以直接通过写入HTTP返回的头信息，比如对于新闻首页index.php可以是20分钟，而对于具体的一条新闻页面可能是1天后过 期。比如：在php中加入了1个月后过期：  
+```  
+对于动态页面，则可以直接通过写入HTTP返回的头信息，比如对于新闻首页index.php可以是20分钟，而对于具体的一条新闻页面可能是1天后过 期。比如：在php中加入了1个月后过期： 
+``` 
 // Expires one month later  
 header("Expires: " .gmdate ("D, d M Y H:i:s", time() + 3600 * 24 * 30). " GMT");  
-  
+```
 
 - 如果服务器端有基于HTTP的认证，必须有Cache-Control: public标记，允许前台
 ASP应用的缓存改造 首先在公用的包含文件中(比如include.asp)加入以下公用函数：  
+```
 <%  
 ' Set Expires Header in minutes  
 Function SetExpiresHeader(ByVal minutes)   
@@ -267,6 +277,7 @@ End Function
 '页面将被设置20分钟后过期  
 SetExpiresHeader(20)  
 %>  
+```
 
 ### 应用的缓存兼容性设计
 
@@ -448,8 +459,6 @@ Percentage of the requests served within a certain time (ms)
   
 小节：  
 
-  
-
 - 大访问量的网站应尽可能将动态网页生成静态页面作为缓存发布，甚至对于搜索引擎这样的动态应用来说，缓存机制也是非常非常重要的。  
 
 - 在动态页面中利用HTTP Header定义缓存更新策略。  
@@ -457,10 +466,7 @@ Percentage of the requests served within a certain time (ms)
 - 利用缓存服务器获得额外的配置和安全性  
 
 - 日志非常重要：SQUID日志缺省不支持COMBINED日志，但对于需要REFERER日志的这个补丁非常重要：[http://www.squid-cache.org/mail-archive/squid-dev/200301/0164.html](http://www.squid-cache.org/mail-archive/squid-dev/200301/0164.html)  
-  
-  
 
-  
 参考资料：  
 [HTTP代理缓存](http://vancouver-webpages.com/proxy.html)   
 http://vancouver-webpages.com/proxy.html  
