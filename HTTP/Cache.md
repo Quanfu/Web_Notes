@@ -408,10 +408,25 @@ Response.Cache.SetCacheability ( HttpCacheability.Public ) ;
 
 #### 参考文档和深入阅读
 
+
 ##### [HTTP 1.1 规范定义](http://www.ietf.org/rfc/rfc2616.txt)
 
 HTTP 1.1的规范有大量的扩展用于页面缓存，以及权威的接口实现指南，参考章节：13, 14.9, 14.21, 以及 14.25.  
   
+- [RFC  2616](http://www.w3.org/Protocols/rfc2616/rfc2616.html):  
+  
+
+    - [section  13](http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html#sec13) (Caching)  
+
+    - [section  14.9](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9) (Cache-Control header)  
+
+    - [section  14.21](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.21) (Expires header)  
+
+    - [section  14.32](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.32) (Pragma: no-cache) is important if you are interacting with  HTTP/1.0 caches  
+
+    - [section  14.29](http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.29) (Last-Modified) is the most common validation method  
+
+    - [section  3.11](http://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.11) (Entity Tags) covers the extra validation method  
 
 ##### [Web-Caching.com](http://www.web-caching.com/)
 
