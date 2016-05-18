@@ -548,6 +548,9 @@ Jeff Goldberg内容丰富的演说告诉你为什么不应该过度依赖访问�
 [版权声明](http://creativecommons.org/licenses/by/3.0/deed.zh)：可以任意转载，转载时请务必以超链接形式标明文章[原始出处](http://www.chedong.com/tech/cache_docs.html)和作者信息及[本声明](http://www.chedong.com/blog/archives/001249.html)。  
 [http://www.chedong.com/tech/cache_docs.html](http://www.chedong.com/tech/cache_docs.html)
 
+
+[Caching Improvements in Internet Explorer 9](https://blogs.msdn.microsoft.com/ie/2010/07/14/caching-improvements-in-internet-explorer-9/)
+[**What's the difference between Cache-Control: max-age=0 and no-cache?**](https://stackoverflow.com/questions/1046966/whats-the-difference-between-cache-control-max-age-0-and-no-cache)
 ***
 
 ##Cache-Control Detail
